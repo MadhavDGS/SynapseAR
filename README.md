@@ -1,7 +1,7 @@
 # Synapse AR - Augmented Reality Healthcare Assistant
 
 ##  before that for the complete ppt and some overview of our project please see this images and vids in folder
-https://drive.google.com/file/d/1qxfK5UlEdasvXByiOflfJ-39kxgvZugt/view?usp=sharing
+https://drive.google.com/drive/folders/1uyZ2Iewq-coRawN9x-_slB2hvoRqWAQ9?usp=sharing
 
 
 ## Problem Statement: The Growing Need for Elderly-Centric Assistive Technology

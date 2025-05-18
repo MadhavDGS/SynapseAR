@@ -1,0 +1,430 @@
+
+{% extends "base.html" %}
+
+{% block title %}Health Monitoring - Synapse AR{% endblock %}
+
+{% block styles %}
+<style>
+    .bpm-display {
+        font-size: 6rem;
+        font-weight: bold;
+        color: #343a40;
+        text-align: center;
+        margin-top: 1rem;
+        line-height: 1;
+    }
+    .bpm-unit {
+        font-size: 1.5rem;
+        color: #6c757d;
+        position: relative;
+        top: -2rem;
+    }
+    .bpm-label {
+        font-size: 1.2rem;
+        color: #6c757d;
+        text-align: center;
+    }
+    .last-updated {
+        font-size: 0.8rem;
+        color: #6c757d;
+        text-align: center;
+    }
+    .heart-icon {
+        color: #dc3545;
+        margin-right: 8px;
+    }
+    .health-card {
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        padding: 25px;
+        height: 100%;
+    }
+    .health-card.primary {
+        border-left: 4px solid #0d6efd;
+    }
+    .health-card.danger {
+        border-left: 4px solid #dc3545;
+    }
+    .health-card.success {
+        border-left: 4px solid #28a745;
+    }
+    .health-card h5 {
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: #343a40;
+    }
+    .btn-refresh {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .heart-rate-container {
+        margin-top: 20px;
+        position: relative;
+    }
+    .progress-ring {
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+    }
+    .pulse-animation {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    .health-tab {
+        cursor: pointer;
+        padding: 15px;
+        margin-right: 5px;
+        border-radius: 5px 5px 0 0;
+        border: 1px solid #dee2e6;
+        background-color: #f8f9fa;
+    }
+    .health-tab.active {
+        background-color: white;
+        border-bottom: none;
+        font-weight: bold;
+    }
+    .health-tab-content {
+        display: none;
+        padding: 20px;
+        border: 1px solid #dee2e6;
+        border-radius: 0 0 5px 5px;
+    }
+    .health-tab-content.active {
+        display: block;
+    }
+    .circle-chart {
+        width: 140px;
+        height: 140px;
+        margin: 0 auto;
+        position: relative;
+    }
+    .circle-bg {
+        fill: none;
+        stroke: #eee;
+        stroke-width: 3.8;
+    }
+    .circle-chart__circle {
+        fill: none;
+        stroke-width: 3.8;
+        stroke-linecap: round;
+        animation: circle-chart-fill 2s reverse;
+        transform: rotate(-90deg);
+        transform-origin: center;
+    }
+    .circle-chart__info {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex">
+            <h2 class="mb-4"><i class="bi bi-heart-pulse-fill text-danger"></i> Health Monitoring</h2>
+            <div class="ms-auto">
+                {% if not connected %}
+                <a href="/" class="btn btn-primary"><i class="bi bi-plug-fill"></i> Connect Device</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="health-tabs">
+            <div class="d-flex border-bottom mb-3">
+                <div id="tab-heart-rate" class="health-tab active">
+                    <i class="bi bi-heart-pulse-fill text-danger"></i> Heart Rate
+                </div>
+                <div id="tab-instructions" class="health-tab">
+                    <i class="bi bi-info-circle-fill text-primary"></i> Instructions
+                </div>
+                <div id="tab-history" class="health-tab">
+                    <i class="bi bi-graph-up text-success"></i> History
+                </div>
+            </div>
+        </div>
+        
+        <!-- Heart Rate Tab Content -->
+        <div id="content-heart-rate" class="health-tab-content active">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="health-card primary position-relative">
+                        <h5><i class="bi bi-heart-pulse-fill heart-icon"></i>Current Heart Rate</h5>
+                        <button id="refresh-hr" class="btn btn-sm btn-outline-primary btn-refresh">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                        
+                        {% if connected %}
+                            <div class="heart-rate-container">
+                                <div class="bpm-display {% if heart_rate.valid %}pulse-animation{% endif %}">
+                                    <span id="bpmValue">
+                                        {% if heart_rate.valid %}
+                                            {{ heart_rate.bpm|int }}
+                                        {% else %}
+                                            --
+                                        {% endif %}
+                                    </span>
+                                    <span class="bpm-unit">BPM</span>
+                                </div>
+                                
+                                <div id="lastUpdated" class="last-updated mt-3">
+                                    {% if heart_rate.last_updated %}
+                                        Last updated: {{ ((time.time() - heart_rate.last_updated)|int) }} seconds ago
+                                    {% else %}
+                                        Waiting for data...
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="text-center mt-4">
+                                    <p id="heart-rate-status" class="mb-2">
+                                        {% if heart_rate.valid %}
+                                            {% set bpm = heart_rate.bpm|int %}
+                                            {% if bpm < 60 %}
+                                                <span class="badge bg-warning">Low Heart Rate</span>
+                                            {% elif bpm > 100 %}
+                                                <span class="badge bg-warning">Elevated Heart Rate</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Normal Heart Rate</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-secondary">No Data</span>
+                                        {% endif %}
+                                    </p>
+                                    <p id="measurement-note" class="text-muted small mb-0">
+                                        Measured over 10 seconds
+                                    </p>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <p>Not connected to the device. Please connect from the home page.</p>
+                                <a href="/" class="btn btn-primary">Go to Home</a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="health-card success">
+                        <h5><i class="bi bi-info-circle-fill text-success me-2"></i>Heart Rate Info</h5>
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="circle-chart">
+                                    <svg viewBox="0 0 36 36" class="circular-chart">
+                                        <path class="circle-bg"
+                                            d="M18 2.0845
+                                                a 15.9155 15.9155 0 0 1 0 31.831
+                                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                                        />
+                                        <path class="circle-chart__circle" stroke="#28a745"
+                                            stroke-dasharray="{% if heart_rate.valid %}{{ heart_rate.quality }}{% else %}0{% endif %}, 100"
+                                            d="M18 2.0845
+                                                a 15.9155 15.9155 0 0 1 0 31.831
+                                                a 15.9155 15.9155 0 0 1 0 -31.831"
+                                            id="quality-circle"
+                                        />
+                                        <div class="circle-chart__info">
+                                            <text id="quality-percentage" x="18" y="20.35" class="circle-chart__percent">
+                                                {% if heart_rate.valid %}{{ heart_rate.quality }}%{% else %}--{% endif %}
+                                            </text>
+                                        </div>
+                                    </svg>
+                                    <div class="text-center mt-2">Signal Quality</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <h6>Healthy Range:</h6>
+                                <p>60-100 BPM (Adult)</p>
+                                
+                                <h6 class="mt-3">Your Status:</h6>
+                                <p id="status-text">
+                                    {% if heart_rate.valid %}
+                                        {% set bpm = heart_rate.bpm|int %}
+                                        {% if bpm < 60 %}
+                                            Below normal range
+                                        {% elif bpm > 100 %}
+                                            Above normal range
+                                        {% else %}
+                                            Within normal range
+                                        {% endif %}
+                                    {% else %}
+                                        No data available
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instructions Tab Content -->
+        <div id="content-instructions" class="health-tab-content">
+            <div class="health-card">
+                <h5><i class="bi bi-info-circle-fill text-primary me-2"></i>How to Measure Your Heart Rate</h5>
+                <div class="row">
+                    <div class="col-md-7">
+                        <ol class="mt-3">
+                            <li class="mb-3">Make sure your device is connected to Synapse AR</li>
+                            <li class="mb-3">Place your finger gently on the pulse sensor</li>
+                            <li class="mb-3">Keep your finger still for at least 10 seconds</li>
+                            <li class="mb-3">Wait for the measurement to complete</li>
+                            <li class="mb-3">View your heart rate displayed in beats per minute (BPM)</li>
+                        </ol>
+                        
+                        <div class="alert alert-info mt-4">
+                            <i class="bi bi-lightbulb-fill me-2"></i>
+                            <strong>Tip:</strong> For best results, sit in a relaxed position and avoid moving during measurement.
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">Normal Heart Rate Ranges</h6>
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Age</th>
+                                            <th>BPM Range</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Adults</td>
+                                            <td>60-100</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Children (7-15)</td>
+                                            <td>70-110</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Athletes</td>
+                                            <td>40-60</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- History Tab Content -->
+        <div id="content-history" class="health-tab-content">
+            <div class="health-card">
+                <h5><i class="bi bi-graph-up text-success me-2"></i>Heart Rate History</h5>
+                <div class="text-center py-4">
+                    <p>Heart rate history feature will be available in a future update.</p>
+                    <p>This will allow you to track your heart rate measurements over time.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Tab switching functionality
+    document.querySelectorAll('.health-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active class from all tabs
+            document.querySelectorAll('.health-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.health-tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            this.classList.add('active');
+            
+            // Show corresponding content
+            const contentId = 'content-' + this.id.split('-')[1];
+            document.getElementById(contentId).classList.add('active');
+        });
+    });
+
+    // Update heart rate data every 3 seconds
+    function updateHeartRate() {
+        if (!{{ connected|tojson }}) return;
+
+        fetch('/api/heart_rate')
+            .then(response => response.json())
+            .then(data => {
+                if (data.valid) {
+                    // Update BPM display
+                    const bpmValue = Math.round(data.bpm);
+                    document.getElementById('bpmValue').innerText = bpmValue;
+                    document.querySelector('.heart-rate-container').classList.add('pulse-animation');
+                    
+                    // Update signal quality circle
+                    const qualityCircle = document.getElementById('quality-circle');
+                    qualityCircle.setAttribute('stroke-dasharray', `${data.quality}, 100`);
+                    document.getElementById('quality-percentage').textContent = `${data.quality}%`;
+                    
+                    // Update status text
+                    let statusText = '';
+                    let statusBadge = '';
+                    if (bpmValue < 60) {
+                        statusText = 'Below normal range';
+                        statusBadge = '<span class="badge bg-warning">Low Heart Rate</span>';
+                    } else if (bpmValue > 100) {
+                        statusText = 'Above normal range';
+                        statusBadge = '<span class="badge bg-warning">Elevated Heart Rate</span>';
+                    } else {
+                        statusText = 'Within normal range';
+                        statusBadge = '<span class="badge bg-success">Normal Heart Rate</span>';
+                    }
+                    document.getElementById('status-text').textContent = statusText;
+                    document.getElementById('heart-rate-status').innerHTML = statusBadge;
+                    
+                    // Calculate seconds since last update
+                    const now = Math.floor(Date.now() / 1000);
+                    const secondsAgo = now - data.last_updated;
+                    document.getElementById('lastUpdated').innerText = 
+                        'Last updated: ' + secondsAgo + ' seconds ago';
+                } else {
+                    document.getElementById('bpmValue').innerText = '--';
+                    document.querySelector('.heart-rate-container').classList.remove('pulse-animation');
+                    document.getElementById('quality-circle').setAttribute('stroke-dasharray', '0, 100');
+                    document.getElementById('quality-percentage').textContent = '--';
+                    document.getElementById('status-text').textContent = 'No data available';
+                    document.getElementById('heart-rate-status').innerHTML = '<span class="badge bg-secondary">No Data</span>';
+                    document.getElementById('lastUpdated').innerText = 'Waiting for data...';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching heart rate data:', error);
+            });
+    }
+
+    // Update initially and then every 3 seconds
+    updateHeartRate();
+    setInterval(updateHeartRate, 3000);
+    
+    // Refresh button functionality
+    document.getElementById('refresh-hr').addEventListener('click', function() {
+        this.querySelector('i').classList.add('fa-spin');
+        updateHeartRate();
+        setTimeout(() => {
+            this.querySelector('i').classList.remove('fa-spin');
+        }, 1000);
+    });
+</script>
+{% endblock %}

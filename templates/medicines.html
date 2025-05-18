@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Medicines - Synapse AR Controller{% endblock %}
+
+{% block header_title %}Medicine Management{% endblock %}
+{% block header_subtitle %}View and update medicine information on your Synapse AR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Current Medicines List -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-pills me-2"></i>Current Medicines</h5>
+                </div>
+                <div class="card-body">
+                    {% if medicines %}
+                        {% for medicine in medicines %}
+                            <div class="medicine-item d-flex justify-content-between align-items-center {% if medicine.should_take %}should-take{% endif %}">
+                                <div>
+                                    <p class="medicine-name">{{ medicine.name }}</p>
+                                    <p class="medicine-status {% if medicine.should_take %}take-now{% else %}take-later{% endif %}">
+                                        {% if medicine.should_take %}
+                                            <i class="fas fa-check-circle me-1"></i>
+                                        {% else %}
+                                            <i class="fas fa-clock me-1"></i>
+                                        {% endif %}
+                                        {{ medicine.message }}
+                                    </p>
+                                </div>
+                                {% if connected %}
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary edit-medicine-btn" 
+                                            data-medicine-id="{{ medicine.index }}"
+                                            data-medicine-name="{{ medicine.name }}">
+                                        <i class="fas fa-edit me-1"></i>Edit
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            No medicines found. Connect to the device and add some medicines.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Add/Edit Medicine Form -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-edit me-2"></i><span id="form-title">Edit Medicine</span></h5>
+                </div>
+                <div class="card-body">
+                    {% for message in get_flashed_messages() %}
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                    
+                    <form action="/update_medicine" method="post" id="medicine-form">
+                        <div class="mb-3">
+                            <label for="medicineIndex" class="form-label">Medicine Number (1-4):</label>
+                            <input type="number" class="form-control" id="medicineIndex" name="index" 
+                                   min="1" max="4" required value="1">
+                            <div class="form-text">Choose which medicine to update (1-4 only)</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="medicineName" class="form-label">Medicine with Time:</label>
+                            <input type="text" class="form-control" id="medicineName" name="name" required
+                                   placeholder="e.g., DICLOWIN 650 9 PM">
+                            <div class="form-text">Include medicine name and time (e.g., 'DICLOWIN 650 9 PM')</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-save me-2"></i>Save Medicine
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="resetBtn">
+                            <i class="fas fa-undo me-2"></i>Reset Form
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Presets Card -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Common Presets</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <button class="btn btn-sm btn-outline-secondary preset-btn" data-preset="DICLOWIN 650 9 PM">
+                            DICLOWIN 650 9 PM
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary preset-btn" data-preset="IMEGLYN 1000 8 AM">
+                            IMEGLYN 1000 8 AM
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary preset-btn" data-preset="Crocin 2 PM">
+                            Crocin 2 PM
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary preset-btn" data-preset="Dolo 6 PM">
+                            Dolo 6 PM
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tips Card -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Medicine Format Guide</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Always include the time with the medicine name (e.g., 'DICLOWIN 650 9 PM')</li>
+                        <li>Medicines that should be taken now will be highlighted with a green border</li>
+                        <li>You can have up to 4 medicines programmed</li>
+                        <li>The AR system will automatically detect your medicines and show if it's time to take them</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .medicine-item {
+        background-color: var(--card-bg-light, #f8f9fa);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        border-left: 4px solid var(--primary-color, #0d6efd);
+    }
+    
+    .dark-theme .medicine-item {
+        background-color: var(--card-bg-dark, #343a40);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .medicine-item:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .medicine-item.should-take {
+        border-left: 4px solid var(--success-color, #28a745);
+        background-color: rgba(40, 167, 69, 0.05);
+    }
+    
+    .dark-theme .medicine-item.should-take {
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+    
+    .medicine-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--text-light, #212529);
+        margin-bottom: 5px;
+    }
+    
+    .dark-theme .medicine-name {
+        color: var(--text-dark, #f8f9fa);
+    }
+    
+    .medicine-status {
+        color: var(--secondary-color, #6c757d);
+        margin-bottom: 0;
+    }
+    
+    .medicine-status.take-now {
+        color: var(--success-color, #28a745);
+        font-weight: 500;
+    }
+    
+    .preset-btn {
+        margin-bottom: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get form elements
+        const form = document.getElementById('medicine-form');
+        const indexInput = document.getElementById('medicineIndex');
+        const nameInput = document.getElementById('medicineName');
+        const formTitle = document.getElementById('form-title');
+        const submitBtn = document.getElementById('submitBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        // Add click handlers to all edit buttons
+        const editButtons = document.querySelectorAll('.edit-medicine-btn');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const id = this.getAttribute('data-medicine-id');
+                const name = this.getAttribute('data-medicine-name');
+                
+                // Update form
+                indexInput.value = id;
+                nameInput.value = name;
+                formTitle.textContent = `Edit Medicine #${id}`;
+                submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Update Medicine';
+                
+                // Scroll to form
+                form.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+        
+        // Reset button handler
+        resetBtn.addEventListener('click', function() {
+            formTitle.textContent = 'Add New Medicine';
+            submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Medicine';
+            form.reset();
+            
+            // Set index to 1
+            indexInput.value = 1;
+        });
+        
+        // Preset button handlers
+        const presetButtons = document.querySelectorAll('.preset-btn');
+        presetButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const preset = this.getAttribute('data-preset');
+                
+                // Update the name field with preset
+                nameInput.value = preset;
+                
+                // Focus on the name field
+                nameInput.focus();
+            });
+        });
+    });
+</script>
+{% endblock %} 

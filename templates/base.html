@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Synapse AR{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6E48AA;
+            --primary-light: #9D50BB;
+            --primary-dark: #4A3178;
+            --secondary-color: #7F7FD5;
+            --accent-color: #FF8C00;
+            --gradient-start: #7F7FD5;
+            --gradient-mid: #91EAEE;
+            --gradient-end: #86A8E7;
+            --light-bg: #f8faff;
+            --dark-bg: #121212;
+            --card-bg-light: #ffffff;
+            --card-bg-dark: #1E1E1E;
+            --text-light: #2D3748;
+            --text-dark: #E2E8F0;
+            --border-radius: 12px;
+            --card-shadow-light: 0 8px 20px rgba(0,0,0,0.05);
+            --card-shadow-dark: 0 8px 20px rgba(0,0,0,0.25);
+            --header-light: #f7f9fc;
+            --header-dark: #232323;
+            --success-color: #48BB78;
+            --warning-color: #F6AD55;
+            --danger-color: #F56565;
+            --info-color: #4299E1;
+            --muted-text-light: #718096;
+            --muted-text-dark: #A0AEC0;
+        }
+        
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-light);
+            transition: all 0.3s ease;
+            padding-bottom: 30px;
+            overflow-x: hidden;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        
+        body.dark-theme {
+            background-color: var(--dark-bg);
+            color: var(--text-dark);
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 0.8rem 1rem;
+            transition: all 0.3s ease;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .dark-theme .navbar {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white !important;
+            display: flex;
+            align-items: center;
+        }
+        
+        .navbar-brand i {
+            margin-right: 8px;
+            font-size: 1.75rem;
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            color: rgba(255,255,255,0.85) !important;
+            margin: 0 5px;
+            position: relative;
+            transition: all 0.3s ease;
+            padding: 0.7rem 1rem;
+            border-radius: var(--border-radius);
+        }
+        
+        .nav-link:hover {
+            color: white !important;
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        .nav-link.active {
+            color: white !important;
+            background-color: rgba(255,255,255,0.2);
+        }
+        
+        .nav-link i {
+            margin-right: 6px;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 3rem 1rem;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .container {
+            max-width: 1200px;
+            padding: 1.5rem;
+        }
+        
+        .card {
+            border-radius: var(--border-radius);
+            border: none;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow-light);
+            background-color: var(--card-bg-light);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.1);
+        }
+        
+        .dark-theme .card {
+            background-color: var(--card-bg-dark);
+            box-shadow: var(--card-shadow-dark);
+            color: var(--text-dark);
+        }
+        
+        .card-header {
+            font-weight: 600;
+            background-color: var(--header-light);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 1rem 1.25rem;
+        }
+        
+        .dark-theme .card-header {
+            background-color: var(--header-dark);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .card-body {
+            padding: 1.25rem;
+        }
+
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            font-family: 'Poppins', sans-serif;
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(0,0,0,0.1);
+            padding: 0.5rem 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .dark-theme .form-control {
+            background-color: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.1);
+            color: var(--text-dark);
+        }
+        
+        .dark-theme input::placeholder,
+        .dark-theme textarea::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+
+        .form-control:focus {
+            box-shadow: 0 0 0 0.2rem rgba(110, 72, 170, 0.25);
+            border-color: var(--primary-color);
+        }
+        
+        .btn {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            border-radius: var(--border-radius);
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            border: none;
+            box-shadow: 0 4px 10px rgba(110, 72, 170, 0.3);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(110, 72, 170, 0.4);
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        .status-badge i {
+            margin-right: 6px;
+            font-size: 0.8rem;
+        }
+        
+        .status-badge.connected {
+            background-color: rgba(72, 187, 120, 0.9);
+        }
+        
+        .status-badge.disconnected {
+            background-color: rgba(245, 101, 101, 0.9);
+        }
+        
+        .theme-switch-wrapper {
+            display: flex;
+            align-items: center;
+            margin-left: 15px;
+        }
+        
+        .theme-switch {
+            display: inline-block;
+            height: 24px;
+            position: relative;
+            width: 50px;
+        }
+
+        .theme-switch input {
+            display: none;
+        }
+
+        .slider {
+            background-color: rgba(255,255,255,0.3);
+            bottom: 0;
+            cursor: pointer;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            background-color: white;
+            bottom: 4px;
+            content: "";
+            height: 16px;
+            left: 4px;
+            position: absolute;
+            transition: .4s;
+            width: 16px;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .theme-label {
+            color: white;
+            margin-right: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: white;
+            padding: 2.5rem 0;
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiB2aWV3Qm94PSIwIDAgMTI4MCAxODAiIHByZXNlcnZlQXNwZWN0UmF0aW89Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0iI2ZmZmZmZiI+PHBhdGggZD0iTTAgMTgwaDEyODBDODU3LjkgMTgwIDQ4NC42IDEyNS44IDEyMC44IDg3LjJMMCAwdjE4MHoiLz48L2c+PC9zdmc+');
+            background-size: 100% 100px;
+            background-position: bottom;
+            z-index: 1;
+            opacity: 0.2;
+        }
+        
+        .page-header h1 {
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .page-header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .alert {
+            border-radius: var(--border-radius);
+            border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        
+        .dark-theme .alert {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        
+        .alert-success {
+            background-color: #D4EDDA;
+            color: #155724;
+        }
+        
+        .alert-danger {
+            background-color: #F8D7DA;
+            color: #721C24;
+        }
+        
+        .dark-theme .alert-success {
+            background-color: rgba(72, 187, 120, 0.2);
+            color: #9AE6B4;
+        }
+        
+        .dark-theme .alert-danger {
+            background-color: rgba(245, 101, 101, 0.2);
+            color: #FEB2B2;
+        }
+        
+        .animation-pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+        
+        .dark-theme ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .dark-theme ::-webkit-scrollbar-thumb {
+            background: var(--primary-light);
+        }
+
+        /* Badges */
+        .badge {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+
+        /* Typography improvements */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        p {
+            margin-bottom: 1rem;
+        }
+
+        .lead {
+            font-weight: 400;
+            font-size: 1.15rem;
+        }
+        
+        /* Text colors for dark mode */
+        .text-muted {
+            color: var(--muted-text-light) !important;
+        }
+        
+        .dark-theme .text-muted {
+            color: var(--muted-text-dark) !important;
+        }
+        
+        /* Fix form text */
+        .form-text {
+            color: var(--muted-text-light);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+        
+        .dark-theme .form-text {
+            color: var(--muted-text-dark);
+        }
+
+        /* Button color adjustments for dark mode */
+        .dark-theme .btn-outline-primary {
+            color: var(--primary-light);
+            border-color: var(--primary-light);
+        }
+        
+        .dark-theme .btn-outline-primary:hover {
+            background-color: var(--primary-light);
+            color: white;
+        }
+        
+        .dark-theme .btn-outline-secondary {
+            color: var(--text-dark);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .dark-theme .btn-outline-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Improve link visibility in dark mode */
+        .dark-theme a:not(.btn):not(.nav-link) {
+            color: var(--primary-light);
+        }
+        
+        .dark-theme a:not(.btn):not(.nav-link):hover {
+            color: var(--accent-color);
+        }
+    </style>
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-brain"></i> Synapse AR
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
+                            <i class="fas fa-home"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/medicines' %}active{% endif %}" href="/medicines">
+                            <i class="fas fa-pills"></i> Medicines
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/schedule' %}active{% endif %}" href="/schedule">
+                            <i class="fas fa-calendar-alt"></i> Schedule
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/emergency' %}active{% endif %}" href="/emergency">
+                            <i class="fas fa-exclamation-triangle"></i> Emergency
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/gps' %}active{% endif %}" href="/gps">
+                            <i class="fas fa-map-marker-alt"></i> GPS
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/heart_rate' %}active{% endif %}" href="/heart_rate">
+                            <i class="bi bi-heart-pulse-fill"></i> Heart Rate
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/spo2' %}active{% endif %}" href="/spo2">
+                            <i class="fas fa-lungs"></i> SPO2
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/health' %}active{% endif %}" href="/health">
+                            <i class="bi bi-heart-pulse-fill"></i> Health
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/predictions' %}active{% endif %}" href="/predictions">
+                            <i class="fas fa-chart-line"></i> Predictions
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="d-flex align-items-center">
+                    <div class="status-badge {% if connected %}connected{% else %}disconnected{% endif %}">
+                        <i class="fas {% if connected %}fa-plug{% else %}fa-unlink{% endif %}"></i>
+                        {% if connected %}Connected{% else %}Disconnected{% endif %}
+                    </div>
+                    
+                    <div class="theme-switch-wrapper ms-3">
+                        <span class="theme-label">
+                            <i class="fas fa-moon"></i>
+                        </span>
+                        <label class="theme-switch">
+                            <input type="checkbox" id="theme-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    {% block header %}
+    <!-- Default Page Header - will be overridden in individual pages -->
+    <div class="page-header">
+        <div class="container text-center">
+            <h1>{% block header_title %}Synapse AR Controller{% endblock %}</h1>
+            <p class="lead">{% block header_subtitle %}Manage your AR display device{% endblock %}</p>
+        </div>
+    </div>
+    {% endblock %}
+
+    <!-- Flash Messages -->
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'error' or category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    {% block content %}{% endblock %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const body = document.body;
+            
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                body.classList.add('dark-theme');
+                themeToggle.checked = true;
+            }
+            
+            // Handle theme toggle
+            themeToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    body.classList.add('dark-theme');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    body.classList.remove('dark-theme');
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+            

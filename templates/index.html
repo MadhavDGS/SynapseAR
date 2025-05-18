@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Synapse AR Controller{% endblock %}
+
+{% block header_title %}Synapse AR Controller{% endblock %}
+{% block header_subtitle %}Connect and manage your augmented reality display device{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-plug me-2"></i>Device Connection</h5>
+                    <div class="device-status-indicator">
+                        {% if connected %}
+                            <span class="badge bg-success rounded-pill"><i class="fas fa-check-circle me-1"></i> Connected</span>
+                        {% else %}
+                            <span class="badge bg-danger rounded-pill"><i class="fas fa-times-circle me-1"></i> Not Connected</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h4 class="mb-3">Connection Status</h4>
+                        {% if connected %}
+                            <div class="connection-info">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="connection-icon connected me-3">
+                                        <i class="fas fa-satellite-dish"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-1">Connected to {{ current_port }}</h5>
+                                        <p class="text-muted mb-0">Device is ready for operation</p>
+                                    </div>
+                                </div>
+                                <div class="animation-pulse connected-pulse mb-4"></div>
+                            </div>
+                        {% else %}
+                            <div class="connection-info">
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="connection-icon disconnected me-3">
+                                        <i class="fas fa-unlink"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-1">No Device Connected</h5>
+                                        <p class="text-muted mb-0">Please connect your device to continue</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {% if not connected %}
+                        <div class="mb-4">
+                            <h4 class="mb-3">Connect to Device</h4>
+                            <form action="/scan" method="post" class="mb-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i> Scan for Ports
+                                </button>
+                            </form>
+
+                            {% if available_ports %}
+                                <form action="/connect" method="post">
+                                    <div class="mb-3">
+                                        <label for="port" class="form-label">Select Port</label>
+                                        <select name="port" id="port" class="form-select port-select">
+                                            {% for port in available_ports %}
+                                                <option value="{{ port.device }}" {{ 'selected' if port.likely_esp32 else '' }}>
+                                                    {{ port.device }} - {{ port.description }} 
+                                                    {% if port.likely_esp32 %}<span class="text-success">(Likely ESP32)</span>{% endif %}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-plug me-2"></i> Connect
+                                    </button>
+                                </form>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <div class="d-flex">
+                                        <div class="me-3">
+                                            <i class="fas fa-info-circle fa-2x"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="alert-heading">No ports found</h5>
+                                            <p class="mb-0">Make sure your device is connected and click "Scan for Ports".</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <form action="/disconnect" method="post" class="mb-4">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-unlink me-2"></i> Disconnect
+                            </button>
+                        </form>
+                        
+                        <div class="mt-5 mb-3">
+                            <h4 class="mb-4 section-title"><i class="fas fa-th-large me-2"></i>Device Functions</h4>
+                        </div>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-4 mb-4">
+                                <div class="card function-card h-100">
+                                    <div class="card-body text-center p-4">
+                                        <div class="feature-icon mb-3">
+                                            <i class="fas fa-pills"></i>
+                                        </div>
+                                        <h5>Medicines</h5>
+                                        <p class="text-muted">Manage your medicine list and schedule reminders</p>
+                                        <a href="/medicines" class="btn btn-primary mt-2">
+                                            Manage Medicines <i class="fas fa-arrow-right ms-1"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="card function-card h-100">
+                                    <div class="card-body text-center p-4">
+                                        <div class="feature-icon mb-3">
+                                            <i class="fas fa-calendar-alt"></i>
+                                        </div>
+                                        <h5>Schedule</h5>
+                                        <p class="text-muted">Plan and organize your daily activities</p>
+                                        <a href="/schedule" class="btn btn-primary mt-2">
+                                            View Schedule <i class="fas fa-arrow-right ms-1"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="card function-card h-100">
+                                    <div class="card-body text-center p-4">
+                                        <div class="feature-icon mb-3">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </div>
+                                        <h5>Emergency</h5>
+                                        <p class="text-muted">Quick access to emergency contacts and info</p>
+                                        <a href="/emergency" class="btn btn-primary mt-2">
+                                            Emergency Contact <i class="fas fa-arrow-right ms-1"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="card function-card h-100">
+                                    <div class="card-body text-center p-4">
+                                        <div class="feature-icon mb-3">
+                                            <i class="fas fa-heartbeat"></i>
+                                        </div>
+                                        <h5>Heart Rate</h5>
+                                        <p class="text-muted">Monitor your real-time heart rate data</p>
+                                        <a href="/heart_rate" class="btn btn-primary mt-2">
+                                            Monitor Heart Rate <i class="fas fa-arrow-right ms-1"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-4">
+                                <div class="card function-card h-100">
+                                    <div class="card-body text-center p-4">
+                                        <div class="feature-icon mb-3">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                        </div>
+                                        <h5>GPS Location</h5>
+                                        <p class="text-muted">Track your current location coordinates</p>
+                                        <a href="/gps" class="btn btn-primary mt-2">
+                                            Track Location <i class="fas fa-arrow-right ms-1"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .connection-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+    
+    .connection-icon.connected {
+        background-color: rgba(72, 187, 120, 0.1);
+        color: var(--success-color);
+    }
+    
+    .dark-theme .connection-icon.connected {
+        background-color: rgba(72, 187, 120, 0.2);
+    }
+    
+    .connection-icon.disconnected {
+        background-color: rgba(245, 101, 101, 0.1);
+        color: var(--danger-color);
+    }
+    
+    .dark-theme .connection-icon.disconnected {
+        background-color: rgba(245, 101, 101, 0.2);
+    }
+    
+    .connected-pulse {
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, 
+            rgba(72, 187, 120, 0) 0%, 
+            rgba(72, 187, 120, 1) 50%, 
+            rgba(72, 187, 120, 0) 100%);
+        background-size: 200% 100%;
+        animation: pulse-animation 2s linear infinite;
+    }
+    
+    @keyframes pulse-animation {
+        0% { background-position: 100% 0%; }
+        100% { background-position: 0% 0%; }
+    }
+    
+    .function-card {
+        border: none;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    .dark-theme .function-card {
+        background-color: var(--card-bg-dark);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .function-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+    }
+    
+    .dark-theme .function-card:hover {
+        box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+    }
+    
+    .feature-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        font-size: 28px;
+        color: white;
+    }
+    
+    .section-title {
+        position: relative;
+        padding-bottom: 10px;
+        margin-bottom: 25px;
+    }
+    
+    .section-title:after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 50px;
+        height: 3px;
+        background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+    }
+    
+    .port-select {
+        border: 1px solid rgba(0,0,0,0.1);
+        border-radius: var(--border-radius);
+        padding: 10px 15px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .dark-theme .port-select {
+        background-color: var(--card-bg-dark);
+        border-color: rgba(255,255,255,0.1);
+        color: var(--text-dark);
+    }
+    
+    .port-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.25rem rgba(111, 72, 170, 0.25);
+    }
+    
+    .connection-info {
+        margin-bottom: 20px;
+    }
+    
+    .dark-theme .text-muted {
+        color: var(--muted-text-dark) !important;
+    }
+    
+    .alert-info {
+        color: #0c5460;
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+    }
+    
+    .dark-theme .alert-info {
+        color: #E2E8F0;
+        background-color: rgba(66, 153, 225, 0.2);
+        border-color: rgba(66, 153, 225, 0.1);
+    }
+</style>
+{% endblock %} 

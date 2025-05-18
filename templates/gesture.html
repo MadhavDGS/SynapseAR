@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Gesture Control - Synapse AR{% endblock %}
+
+{% block styles %}
+<style>
+    .gesture-card {
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        padding: 25px;
+        margin-bottom: 20px;
+    }
+    .status-indicator {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+    .status-active {
+        background-color: #28a745;
+    }
+    .status-inactive {
+        background-color: #dc3545;
+    }
+    .instruction-step {
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    .btn-lg {
+        margin-right: 10px;
+    }
+    .alert-box {
+        margin-bottom: 20px;
+    }
+    .code-block {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        font-family: monospace;
+        margin-bottom: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex">
+            <h2 class="mb-4"><i class="bi bi-hand-index-thumb text-primary"></i> Gesture Control</h2>
+            <div class="ms-auto">
+                {% if not connected %}
+                <a href="/" class="btn btn-primary"><i class="bi bi-plug-fill"></i> Connect Device</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if not mediapipe_available %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-warning alert-box">
+            <h4 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> MediaPipe Not Available</h4>
+            <p>The required MediaPipe library is not installed on this system. Gesture detection in the web interface will not work.</p>
+            <hr>
+            <p class="mb-0">Please use the standalone gesture detection script instead:</p>
+            <div class="code-block">
+                python simple_gesture.py
+            </div>
+            <p>This simplified script uses basic color detection with OpenCV and doesn't require MediaPipe.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="gesture-card">
+            <h4><i class="bi bi-camera-video"></i> Gesture Detection</h4>
+            <p>Control your AR device with hand gestures. When activated, a camera window will open to track your hand movements.</p>
+            
+            <div class="my-4" id="status-container">
+                <h5>Status: 
+                    <span id="status-text">Initializing...</span>
+                    <span class="status-indicator status-inactive" id="status-indicator"></span>
+                </h5>
+            </div>
+            
+            <div class="d-flex mt-4">
+                <button id="start-btn" class="btn btn-success btn-lg" {% if not connected or not mediapipe_available %}disabled{% endif %}>
+                    <i class="bi bi-play-fill"></i> Start Gesture Control
+                </button>
+                <button id="stop-btn" class="btn btn-danger btn-lg" disabled>
+                    <i class="bi bi-stop-fill"></i> Stop Gesture Control
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="gesture-card">
+            <h4><i class="bi bi-info-circle"></i> Instructions</h4>
+            <div class="instruction-step">
+                <h6>1. Start Gesture Control</h6>
+                <p>Click the Start button to begin hand gesture detection.</p>
+            </div>
+            <div class="instruction-step">
+                <h6>2. Position Your Hand</h6>
+                <p>Hold your hand in front of the camera with palm facing the camera.</p>
+            </div>
+            <div class="instruction-step">
+                <h6>3. Pinch Gesture</h6>
+                <p>Bring your index finger and thumb together (pinch) to trigger a page change.</p>
+            </div>
+            <div class="instruction-step">
+                <h6>4. Stop When Done</h6>
+                <p>Press 'q' on the camera window or click Stop button when finished.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let gestureEnabled = false;
+    const statusText = document.getElementById('status-text');
+    const statusIndicator = document.getElementById('status-indicator');
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    
+    // Update status elements
+    function updateStatus(isEnabled) {
+        gestureEnabled = isEnabled;
+        statusText.textContent = isEnabled ? 'Active' : 'Inactive';
+        statusIndicator.className = 'status-indicator ' + (isEnabled ? 'status-active' : 'status-inactive');
+        startBtn.disabled = isEnabled || !{{ connected|tojson }} || !{{ mediapipe_available|tojson }};
+        stopBtn.disabled = !isEnabled;
+    }
+    
+    // Initial status check
+    fetchStatus();
+    
+    // Start gesture detection
+    startBtn.addEventListener('click', function() {
+        fetch('/api/gesture/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateStatus(true);
+                console.log('Gesture detection started');
+            } else {
+                console.error('Failed to start gesture detection:', data.error);
+                alert('Failed to start gesture detection: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error starting gesture detection:', error);
+            alert('Error starting gesture detection');
+        });
+    });
+    
+    // Stop gesture detection
+    stopBtn.addEventListener('click', function() {
+        fetch('/api/gesture/stop', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateStatus(false);
+                console.log('Gesture detection stopped');
+            } else {
+                console.error('Failed to stop gesture detection');
+                alert('Failed to stop gesture detection');
+            }
+        })
+        .catch(error => {
+            console.error('Error stopping gesture detection:', error);
+            alert('Error stopping gesture detection');
+        });
+    });
+    
+    // Fetch current status
+    function fetchStatus() {
+        fetch('/api/gesture/status')
+            .then(response => response.json())
+            .then(data => {
+                updateStatus(data.enabled && data.running);
+                
+                // Disable the start button if MediaPipe is not available
+                if (!data.mediapipe_available) {
+                    startBtn.disabled = true;
+                    startBtn.title = "MediaPipe not installed - use simple_gesture.py instead";
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching gesture status:', error);
+                updateStatus(false);
+            });
+    }
+    
+    // Check status every 5 seconds
+    setInterval(fetchStatus, 5000);
+</script>
+{% endblock %}
+            

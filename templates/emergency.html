@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}Emergency Contact - Synapse AR Controller{% endblock %}
+
+{% block header_title %}Emergency Contact{% endblock %}
+{% block header_subtitle %}Manage your primary emergency contact information{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <!-- Current Emergency Contact -->
+        <div class="col-lg-8 mb-4">
+            <div class="card emergency-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-user-md me-2"></i>Current Emergency Contact</h5>
+                </div>
+                <div class="card-body">
+                    <div class="emergency-contact-display">
+                        <div class="contact-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="contact-info">
+                            <h4 class="contact-name">Dr. Shravya</h4>
+                            <div class="contact-number">
+                                <i class="fas fa-phone-alt me-2"></i>+91 8807612060
+                            </div>
+                            <div class="contact-actions mt-3">
+                                <a href="tel:+918807612060" class="btn btn-success btn-sm me-2">
+                                    <i class="fas fa-phone-alt me-1"></i> Call
+                                </a>
+                                <a href="sms:+918807612060" class="btn btn-info btn-sm">
+                                    <i class="fas fa-sms me-1"></i> Text
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Emergency Contact -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Edit Emergency Contact</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/update_emergency" method="post">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="contactName" class="form-label">Contact Name</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" class="form-control" id="contactName" name="name" 
+                                           value="Dr. Shravya" required>
+                                </div>
+                                <div class="form-text">Name of doctor, caregiver, or family member</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="contactNumber" class="form-label">Contact Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-phone-alt"></i></span>
+                                    <input type="text" class="form-control" id="contactNumber" name="number" 
+                                           value="+91 8807612060" placeholder="+91 88076 12345" required>
+                                </div>
+                                <div class="form-text">Include country code (e.g., +91 for India)</div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Update Contact
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Quick Contacts -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-address-book me-2"></i>Quick Contacts</h5>
+                </div>
+                <div class="card-body">
+                    <div class="quick-contacts">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="quick-contact-card" data-name="Emergency Services" data-number="112">
+                                    <div class="qc-icon">
+                                        <i class="fas fa-ambulance"></i>
+                                    </div>
+                                    <div class="qc-info">
+                                        <h6>Emergency</h6>
+                                        <div class="qc-number">112</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="quick-contact-card" data-name="Medical Emergency" data-number="108">
+                                    <div class="qc-icon">
+                                        <i class="fas fa-first-aid"></i>
+                                    </div>
+                                    <div class="qc-info">
+                                        <h6>Medical</h6>
+                                        <div class="qc-number">108</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="quick-contact-card" data-name="Dr. Shravya" data-number="+91 8807612060">
+                                    <div class="qc-icon">
+                                        <i class="fas fa-user-md"></i>
+                                    </div>
+                                    <div class="qc-info">
+                                        <h6>Doctor</h6>
+                                        <div class="qc-number">+91 8807...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Emergency Tips -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Emergency Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="emergency-tips">
+                        <h6><i class="fas fa-exclamation-triangle me-2 text-warning"></i>In Case of Emergency</h6>
+                        <ul class="tips-list">
+                            <li>Your emergency contact is displayed on your AR device</li>
+                            <li>Pressing the emergency button on the device will initiate a call</li>
+                            <li>Keep your device charged and within reach at all times</li>
+                            <li>Update your contact information whenever it changes</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .emergency-card {
+        border-left: 4px solid var(--danger-color);
+    }
+    
+    .emergency-contact-display {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background-color: rgba(245, 101, 101, 0.05);
+        border-radius: var(--border-radius);
+    }
+    
+    .dark-theme .emergency-contact-display {
+        background-color: rgba(245, 101, 101, 0.1);
+    }
+    
+    .contact-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #e53935, #e35d5b);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+        color: white;
+        font-size: 32px;
+        flex-shrink: 0;
+    }
+    
+    .contact-info {
+        flex-grow: 1;
+    }
+    
+    .contact-name {
+        font-weight: 600;
+        font-size: 1.5rem;
+        margin-bottom: 5px;
+        color: var(--text-light);
+    }
+    
+    .dark-theme .contact-name {
+        color: var(--text-dark);
+    }
+    
+    .contact-number {
+        font-size: 1.1rem;
+        color: var(--primary-color);
+        margin-bottom: 5px;
+    }
+    
+    .dark-theme .contact-number {
+        color: var(--primary-light);
+    }
+    
+    .quick-contact-card {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background-color: var(--light-bg);
+        border-radius: var(--border-radius);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .dark-theme .quick-contact-card {
+        background-color: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .quick-contact-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .dark-theme .quick-contact-card:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    
+    .quick-contact-card.highlight {
+        background-color: rgba(126, 87, 194, 0.1);
+    }
+    
+    .dark-theme .quick-contact-card.highlight {
+        background-color: rgba(126, 87, 194, 0.2);
+    }
+    
+    .qc-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+    
+    .dark-theme .qc-icon {
+        background-color: var(--primary-light);
+    }
+    
+    .qc-info {
+        flex-grow: 1;
+    }
+    
+    .qc-info h6 {
+        margin-bottom: 2px;
+        font-weight: 600;
+    }
+    
+    .qc-number {
+        font-size: 0.9rem;
+        color: var(--primary-color);
+    }
+    
+    .dark-theme .qc-number {
+        color: var(--primary-light);
+    }
+    
+    .tips-list {
+        list-style-type: none;
+        padding-left: 10px;
+        margin-top: 10px;
+    }
+    
+    .tips-list li {
+        position: relative;
+        padding-left: 25px;
+        margin-bottom: 10px;
+    }
+    
+    .tips-list li:before {
+        content: "\f00c";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: var(--success-color);
+    }
+    
+    .input-group-text {
+        background-color: var(--header-light);
+        border-color: rgba(0,0,0,0.1);
+    }
+    
+    .dark-theme .input-group-text {
+        background-color: var(--header-dark);
+        border-color: rgba(255,255,255,0.1);
+        color: var(--text-dark);
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // JavaScript to handle Quick Contacts
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get form elements
+        const nameInput = document.getElementById('contactName');
+        const numberInput = document.getElementById('contactNumber');
+        
+        // Get quick contact cards
+        const quickContacts = document.querySelectorAll('.quick-contact-card');
+        quickContacts.forEach(card => {
+            card.addEventListener('click', function() {
+                const name = this.getAttribute('data-name');
+                const number = this.getAttribute('data-number');
+                
+                // Add highlight effect
+                this.classList.add('highlight');
+                setTimeout(() => {
+                    this.classList.remove('highlight');
+                }, 300);
+                
+                // Update form fields
+                nameInput.value = name;
+                numberInput.value = number;
+                
+                // Focus on the submit button
+                nameInput.focus();
+            });
+        });
+    });
+</script>
+{% endblock %} 

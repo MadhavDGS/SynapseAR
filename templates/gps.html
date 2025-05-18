@@ -1,0 +1,711 @@
+{% extends "base.html" %}
+
+{% block title %}GPS Location - Synapse AR Controller{% endblock %}
+
+{% block header_title %}GPS Location Tracking{% endblock %}
+{% block header_subtitle %}Monitor real-time location data from your NEO-6M GPS module{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Map Card -->
+        <div class="col-lg-8">
+            <div class="card map-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-map me-2"></i>GPS Map
+                    </h5>
+                    <div id="gps-status" class="gps-status">
+                        <span class="status-indicator status-inactive" id="status-indicator"></span>
+                        <span id="status-text">Acquiring Signal...</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="position-relative">
+                        <div id="map" class="map-container"></div>
+                        <div class="location-pulses">
+                            <div class="location-pulse"></div>
+                            <div class="location-pulse delay1"></div>
+                            <div class="location-pulse delay2"></div>
+                        </div>
+                        <div class="map-overlay">
+                            <button id="recenter-map" class="btn btn-sm btn-light">
+                                <i class="fas fa-crosshairs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- GPS Data -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-satellite me-2"></i>Location Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="gps-data-item">
+                        <div class="gps-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="gps-content">
+                            <div class="gps-label">Latitude</div>
+                            <div class="gps-value" id="latitude">--</div>
+                        </div>
+                    </div>
+                    <div class="gps-data-item">
+                        <div class="gps-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="gps-content">
+                            <div class="gps-label">Longitude</div>
+                            <div class="gps-value" id="longitude">--</div>
+                        </div>
+                    </div>
+                    <div class="gps-data-item">
+                        <div class="gps-icon">
+                            <i class="fas fa-mountain"></i>
+                        </div>
+                        <div class="gps-content">
+                            <div class="gps-label">Altitude</div>
+                            <div class="gps-value" id="altitude">--</div>
+                        </div>
+                    </div>
+                    <div class="gps-data-item">
+                        <div class="gps-icon">
+                            <i class="fas fa-satellite-dish"></i>
+                        </div>
+                        <div class="gps-content">
+                            <div class="gps-label">Satellites</div>
+                            <div class="gps-value" id="satellites">--</div>
+                        </div>
+                    </div>
+                    <div class="gps-data-item">
+                        <div class="gps-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="gps-content">
+                            <div class="gps-label">Last Updated</div>
+                            <div class="gps-value" id="last-updated">--</div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary w-100 mt-3" id="refresh-gps">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh GPS Data
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Signal Quality -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-signal me-2"></i>Signal Quality
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="signal-quality-display">
+                        <div class="signal-bars">
+                            <div class="signal-bar" id="bar1"></div>
+                            <div class="signal-bar" id="bar2"></div>
+                            <div class="signal-bar" id="bar3"></div>
+                            <div class="signal-bar" id="bar4"></div>
+                        </div>
+                        <div class="signal-text" id="signal-quality-text">No Signal</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instructions Card -->
+        <div class="col-12 mt-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Using GPS with Synapse AR
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-satellite"></i>
+                                </div>
+                                <div class="info-content">
+                                    <h6>Clear View Required</h6>
+                                    <p>Ensure the device has a clear view of the sky for optimal GPS reception</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="info-content">
+                                    <h6>Initial Acquisition</h6>
+                                    <p>Allow 1-2 minutes for initial GPS signal acquisition on cold start</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-sync-alt"></i>
+                                </div>
+                                <div class="info-content">
+                                    <h6>Automatic Updates</h6>
+                                    <p>GPS info automatically updates every 10 seconds when connected</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <div class="info-icon">
+                                    <i class="fas fa-battery-three-quarters"></i>
+                                </div>
+                                <div class="info-content">
+                                    <h6>Power Consumption</h6>
+                                    <p>GPS tracking increases battery usage; disable when not needed</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    /* Link Leaflet CSS */
+    @import url('https://unpkg.com/leaflet@1.9.3/dist/leaflet.css');
+    
+    .map-container {
+        height: 450px;
+        width: 100%;
+        border-radius: 0 0 var(--border-radius) var(--border-radius);
+        overflow: hidden;
+    }
+    
+    .map-card {
+        overflow: hidden;
+    }
+    
+    .gps-status {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+        padding: 5px 12px;
+        border-radius: 20px;
+        background-color: rgba(0,0,0,0.05);
+    }
+    
+    .dark-theme .gps-status {
+        background-color: rgba(255,255,255,0.1);
+    }
+    
+    .status-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+    
+    .status-active {
+        background-color: var(--success-color);
+        box-shadow: 0 0 0 rgba(72, 187, 120, 0.4);
+        animation: pulse-green 2s infinite;
+    }
+    
+    @keyframes pulse-green {
+        0% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.7);
+        }
+        
+        70% {
+            transform: scale(1);
+            box-shadow: 0 0 0 10px rgba(72, 187, 120, 0);
+        }
+        
+        100% {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 0 rgba(72, 187, 120, 0);
+        }
+    }
+    
+    .status-inactive {
+        background-color: var(--danger-color);
+    }
+    
+    .gps-data-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .dark-theme .gps-data-item {
+        border-bottom-color: rgba(255,255,255,0.05);
+    }
+    
+    .gps-data-item:last-child {
+        border-bottom: none;
+        margin-bottom: 10px;
+    }
+    
+    .gps-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-right: 15px;
+        flex-shrink: 0;
+        font-size: 16px;
+    }
+    
+    .gps-content {
+        flex-grow: 1;
+    }
+    
+    .gps-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--muted-text-light);
+        margin-bottom: 3px;
+    }
+    
+    .dark-theme .gps-label {
+        color: var(--muted-text-dark);
+    }
+    
+    .gps-value {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .location-pulses {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        pointer-events: none;
+        z-index: 400;
+    }
+    
+    .location-pulse {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        background-color: rgba(72, 187, 120, 0.5);
+        border-radius: 50%;
+        left: -5px;
+        top: -5px;
+        animation: pulse 2s infinite;
+    }
+    
+    .location-pulse.delay1 {
+        animation-delay: 0.5s;
+    }
+    
+    .location-pulse.delay2 {
+        animation-delay: 1s;
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(0.1);
+            opacity: 1;
+        }
+        70% {
+            transform: scale(3);
+            opacity: 0;
+        }
+        100% {
+            transform: scale(0.1);
+            opacity: 0;
+        }
+    }
+    
+    .map-overlay {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        z-index: 500;
+    }
+    
+    .signal-quality-display {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 15px;
+    }
+    
+    .signal-bars {
+        display: flex;
+        align-items: flex-end;
+        height: 40px;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+    
+    .signal-bar {
+        width: 8px;
+        margin: 0 3px;
+        background-color: #e5e5e5;
+        border-radius: 3px;
+    }
+    
+    .dark-theme .signal-bar {
+        background-color: #3a3a3a;
+    }
+    
+    .signal-bar.active {
+        background-color: var(--success-color);
+    }
+    
+    #bar1 {
+        height: 25%;
+    }
+    
+    #bar2 {
+        height: 50%;
+    }
+    
+    #bar3 {
+        height: 75%;
+    }
+    
+    #bar4 {
+        height: 100%;
+    }
+    
+    .signal-text {
+        font-weight: 500;
+        color: var(--text-light);
+    }
+    
+    .dark-theme .signal-text {
+        color: var(--text-dark);
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .info-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        background-color: rgba(126, 87, 194, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary-color);
+        margin-right: 15px;
+        flex-shrink: 0;
+        font-size: 18px;
+    }
+    
+    .dark-theme .info-icon {
+        background-color: rgba(126, 87, 194, 0.2);
+        color: var(--primary-light);
+    }
+    
+    .info-content {
+        flex-grow: 1;
+    }
+    
+    .info-content h6 {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .info-content p {
+        font-size: 0.9rem;
+        color: var(--muted-text-light);
+        margin-bottom: 0;
+    }
+    
+    .dark-theme .info-content p {
+        color: var(--muted-text-dark);
+    }
+    
+    /* Dark mode map popup fixes */
+    .dark-theme .leaflet-popup-content-wrapper {
+        background-color: var(--card-bg-dark);
+        color: var(--text-dark);
+    }
+    
+    .dark-theme .leaflet-popup-tip {
+        background-color: var(--card-bg-dark);
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script>
+    // Theme toggle functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+        
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.classList.add('dark-theme');
+            themeToggle.checked = true;
+        }
+        
+        // Handle theme toggle
+        themeToggle.addEventListener('change', function() {
+            if (this.checked) {
+                body.classList.add('dark-theme');
+                localStorage.setItem('theme', 'dark');
+                
+                // Update map tiles if map exists
+                if (map) {
+                    updateMapTiles(true);
+                }
+            } else {
+                body.classList.remove('dark-theme');
+                localStorage.setItem('theme', 'light');
+                
+                // Update map tiles if map exists
+                if (map) {
+                    updateMapTiles(false);
+                }
+            }
+        });
+    });
+    
+    // Map and GPS functionality
+    let map;
+    let marker;
+    let currentTileLayer;
+    
+    // Default coordinates (will be updated with actual GPS data)
+    const defaultLat = 13.0827;
+    const defaultLng = 80.2707;
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize map with default position (Chennai)
+        initMap(defaultLat, defaultLng);
+        
+        // Set up refresh button
+        document.getElementById('refresh-gps').addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            icon.classList.add('fa-spin');
+            fetchGPSData().then(() => {
+                setTimeout(() => {
+                    icon.classList.remove('fa-spin');
+                }, 1000);
+            });
+        });
+        
+        // Set up recenter button
+        document.getElementById('recenter-map').addEventListener('click', function() {
+            if (map && marker) {
+                map.setView(marker.getLatLng(), 15);
+            }
+        });
+        
+        // Initial data fetch
+        fetchGPSData();
+        
+        // Set up polling for GPS updates
+        setInterval(fetchGPSData, 10000); // Fetch every 10 seconds
+    });
+    
+    function initMap(lat, lng) {
+        map = L.map('map').setView([lat, lng], 15);
+        
+        // Determine if dark theme is active
+        const isDarkTheme = document.body.classList.contains('dark-theme');
+        updateMapTiles(isDarkTheme);
+        
+        // Add marker
+        const customIcon = L.divIcon({
+            className: 'custom-map-marker',
+            html: '<div class="marker-dot"></div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
+        
+        marker = L.marker([lat, lng], {icon: customIcon}).addTo(map);
+        marker.bindPopup("Current Location").openPopup();
+    }
+    
+    function updateMapTiles(isDarkTheme) {
+        // Remove current tile layer if it exists
+        if (currentTileLayer) {
+            map.removeLayer(currentTileLayer);
+        }
+        
+        // Add appropriate tile layer based on theme
+        if (isDarkTheme) {
+            // Dark theme map
+            currentTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                maxZoom: 19
+            }).addTo(map);
+        } else {
+            // Light theme map
+            currentTileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+        }
+    }
+    
+    function updateSignalQuality(satellites) {
+        // Reset all bars
+        document.querySelectorAll('.signal-bar').forEach(bar => {
+            bar.classList.remove('active');
+        });
+        
+        let qualityText = "No Signal";
+        
+        // Update bars based on satellite count
+        if (satellites >= 3) {
+            document.getElementById('bar1').classList.add('active');
+            qualityText = "Poor";
+        }
+        
+        if (satellites >= 5) {
+            document.getElementById('bar2').classList.add('active');
+            qualityText = "Fair";
+        }
+        
+        if (satellites >= 7) {
+            document.getElementById('bar3').classList.add('active');
+            qualityText = "Good";
+        }
+        
+        if (satellites >= 9) {
+            document.getElementById('bar4').classList.add('active');
+            qualityText = "Excellent";
+        }
+        
+        document.getElementById('signal-quality-text').innerText = qualityText;
+    }
+    
+    function fetchGPSData() {
+        return fetch('/api/gps')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('GPS Error:', data.error);
+                    document.getElementById('status-indicator').className = 'status-indicator status-inactive';
+                    document.getElementById('status-text').innerText = 'Error: ' + data.error;
+                    updateSignalQuality(0);
+                    return;
+                }
+                
+                if (data.valid) {
+                    // Update status indicator
+                    document.getElementById('status-indicator').className = 'status-indicator status-active';
+                    document.getElementById('status-text').innerText = 'GPS Signal Active';
+                    
+                    // Update data fields
+                    document.getElementById('latitude').innerText = data.latitude.toFixed(6) + '°';
+                    document.getElementById('longitude').innerText = data.longitude.toFixed(6) + '°';
+                    document.getElementById('altitude').innerText = data.altitude.toFixed(1) + ' meters';
+                    document.getElementById('satellites').innerText = data.satellites;
+                    
+                    // Update signal quality
+                    updateSignalQuality(data.satellites);
+                    
+                    // Format last updated time
+                    const lastUpdate = data.last_updated ? 
+                        new Date(data.last_updated * 1000).toLocaleTimeString() :
+                        'Never';
+                    document.getElementById('last-updated').innerText = lastUpdate;
+                    
+                    // Update map position
+                    if (map && marker) {
+                        const newLatLng = [data.latitude, data.longitude];
+                        map.setView(newLatLng, map.getZoom());
+                        marker.setLatLng(newLatLng);
+                        marker.bindPopup(`Lat: ${data.latitude.toFixed(6)}<br>Lng: ${data.longitude.toFixed(6)}`).openPopup();
+                    }
+                } else {
+                    // Update status indicator to show no signal
+                    document.getElementById('status-indicator').className = 'status-indicator status-inactive';
+                    document.getElementById('status-text').innerText = 'GPS Signal Not Available';
+                    
+                    // Clear data fields
+                    document.getElementById('latitude').innerText = '--';
+                    document.getElementById('longitude').innerText = '--';
+                    document.getElementById('altitude').innerText = '--';
+                    document.getElementById('satellites').innerText = '--';
+                    document.getElementById('last-updated').innerText = 'Never';
+                    
+                    // Update signal quality
+                    updateSignalQuality(0);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching GPS data:', error);
+                document.getElementById('status-indicator').className = 'status-indicator status-inactive';
+                document.getElementById('status-text').innerText = 'Error fetching GPS data';
+                updateSignalQuality(0);
+            });
+    }
+</script>
+
+<style>
+    /* Custom map marker styles */
+    .custom-map-marker {
+        background: transparent;
+    }
+    
+    .marker-dot {
+        width: 20px;
+        height: 20px;
+        background-color: var(--primary-color);
+        border-radius: 50%;
+        box-shadow: 0 0 0 rgba(126, 87, 194, 0.4);
+        animation: marker-pulse 1.5s infinite;
+        border: 3px solid white;
+    }
+    
+    .dark-theme .marker-dot {
+        border-color: var(--card-bg-dark);
+    }
+    
+    @keyframes marker-pulse {
+        0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(126, 87, 194, 0.7);
+        }
+        
+        70% {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 10px rgba(126, 87, 194, 0);
+        }
+        
+        100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(126, 87, 194, 0);
+        }
+    }
+</style>
+{% endblock %} 

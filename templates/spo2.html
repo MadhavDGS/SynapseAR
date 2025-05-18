@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block title %}SPO2 Monitor - Synapse AR{% endblock %}
+
+{% block styles %}
+<style>
+    .spo2-display {
+        font-size: 6rem;
+        font-weight: bold;
+        color: var(--text-light);
+        text-align: center;
+        margin-top: 1rem;
+        line-height: 1;
+    }
+    
+    .dark-theme .spo2-display {
+        color: var(--text-dark);
+    }
+    
+    .spo2-unit {
+        font-size: 1.5rem;
+        color: var(--muted-text-light);
+        position: relative;
+        top: -2rem;
+    }
+    
+    .dark-theme .spo2-unit {
+        color: var(--muted-text-dark);
+    }
+    
+    .spo2-label {
+        font-size: 1.2rem;
+        color: var(--muted-text-light);
+        text-align: center;
+    }
+    
+    .dark-theme .spo2-label {
+        color: var(--muted-text-dark);
+    }
+    
+    .last-updated {
+        font-size: 0.8rem;
+        color: var(--muted-text-light);
+        text-align: center;
+    }
+    
+    .dark-theme .last-updated {
+        color: var(--muted-text-dark);
+    }
+    
+    .oxygen-icon {
+        color: var(--primary-color);
+        margin-right: 8px;
+    }
+    
+    .dark-theme .oxygen-icon {
+        color: var(--primary-light);
+    }
+    
+    .health-card {
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        padding: 25px;
+        height: 100%;
+        background-color: var(--card-bg-light);
+    }
+    
+    .dark-theme .health-card {
+        background-color: var(--card-bg-dark);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .health-card.primary {
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .dark-theme .health-card.primary {
+        border-left: 4px solid var(--primary-light);
+    }
+    
+    .health-card.success {
+        border-left: 4px solid var(--success-color);
+    }
+    
+    .dark-theme .health-card.success {
+        border-left: 4px solid var(--success-light);
+    }
+    
+    .pulse-animation {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    /* Table styles for dark mode */
+    .dark-theme .table {
+        color: var(--text-dark);
+    }
+    
+    .dark-theme .table td,
+    .dark-theme .table th {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Alert styles for dark mode */
+    .dark-theme .alert-info {
+        background-color: rgba(23, 162, 184, 0.2);
+        color: var(--text-dark);
+        border-color: rgba(23, 162, 184, 0.3);
+    }
+    
+    .dark-theme .bi-lightbulb-fill {
+        color: var(--info-light);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex">
+            <h2 class="mb-4"><i class="bi bi-droplet-fill text-primary"></i> SPO2 Monitor</h2>
+            <div class="ms-auto">
+                {% if not connected %}
+                <a href="/" class="btn btn-primary"><i class="bi bi-plug-fill"></i> Connect Device</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="health-card primary position-relative">
+            <h5><i class="bi bi-droplet-fill oxygen-icon"></i>Blood Oxygen Level</h5>
+            <button id="refresh-spo2" class="btn btn-sm btn-outline-primary" style="position: absolute; top: 20px; right: 20px;">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+            
+            {% if connected %}
+                <div class="spo2-container">
+                    <div class="spo2-display {% if sensor_data.validReadings %}pulse-animation{% endif %}">
+                        <span id="spo2Value">
+                            {% if sensor_data.validReadings %}
+                                {{ sensor_data.spo2 }}
+                            {% else %}
+                                --
+                            {% endif %}
+                        </span>
+                        <span class="spo2-unit">%</span>
+                    </div>
+                    
+                    <div class="text-center mt-2">
+                        <small class="text-muted">Average: <span id="spo2Avg">
+                            {% if sensor_data.validReadings and sensor_data.spo2Avg %}
+                                {{ sensor_data.spo2Avg }}
+                            {% else %}
+                                --
+                            {% endif %}
+                        </span>%</small>
+                    </div>
+                    
+                    <div id="lastUpdated" class="last-updated mt-3">
+                        {% if sensor_data.last_updated %}
+                            Last updated: {{ ((time.time() - sensor_data.last_updated)|int) }} seconds ago
+                        {% else %}
+                            Waiting for data...
+                        {% endif %}
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <p id="spo2-status" class="mb-2">
+                            {% if sensor_data.validReadings %}
+                                {% if sensor_data.spo2 >= 95 %}
+                                    <span class="badge bg-success">Normal SPO2</span>
+                                {% elif sensor_data.spo2 >= 90 %}
+                                    <span class="badge bg-warning">Borderline SPO2</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Low SPO2</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-secondary">No Data</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-warning">
+                    <p>Not connected to the device. Please connect from the home page.</p>
+                    <a href="/" class="btn btn-primary">Go to Home</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="health-card success">
+            <h5><i class="bi bi-info-circle-fill text-success me-2"></i>SPO2 Information</h5>
+            <div class="row">
+                <div class="col-12">
+                    <h6>Normal SPO2 Ranges:</h6>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Level</th>
+                                <th>SPO2 Range</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Normal</td>
+                                <td>95-100%</td>
+                                <td><span class="badge bg-success">Good</span></td>
+                            </tr>
+                            <tr>
+                                <td>Borderline</td>
+                                <td>90-94%</td>
+                                <td><span class="badge bg-warning">Monitor</span></td>
+                            </tr>
+                            <tr>
+                                <td>Low</td>
+                                <td>&lt; 90%</td>
+                                <td><span class="badge bg-danger">Alert</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="alert alert-info mt-4">
+                        <i class="bi bi-lightbulb-fill me-2"></i>
+                        <strong>Tip:</strong> For accurate readings, keep your finger steady on the sensor and avoid movement.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateSPO2() {
+        if (!{{ connected|tojson }}) return;
+
+        fetch('/api/spo2')
+            .then(response => response.json())
+            .then(data => {
+                // Update SPO2 display
+                document.getElementById('spo2Value').innerText = data.valid ? data.spo2 : '--';
+                
+                // Update average if available
+                if (data.valid && data.spo2Avg) {
+                    document.getElementById('spo2Avg').innerText = data.spo2Avg;
+                } else {
+                    document.getElementById('spo2Avg').innerText = '--';
+                }
+                
+                // Update animation class
+                const container = document.querySelector('.spo2-container');
+                if (data.valid) {
+                    container.classList.add('pulse-animation');
+                } else {
+                    container.classList.remove('pulse-animation');
+                }
+                
+                // Update status badge
+                let statusBadge = '';
+                if (!data.valid) {
+                    statusBadge = '<span class="badge bg-secondary">No Data</span>';
+                } else if (data.spo2 >= 95) {
+                    statusBadge = '<span class="badge bg-success">Normal SPO2</span>';
+                } else if (data.spo2 >= 90) {
+                    statusBadge = '<span class="badge bg-warning">Borderline SPO2</span>';
+                } else {
+                    statusBadge = '<span class="badge bg-danger">Low SPO2</span>';
+                }
+                document.getElementById('spo2-status').innerHTML = statusBadge;
+                
+                // Update last updated time
+                if (data.last_updated) {
+                    const now = Math.floor(Date.now() / 1000);
+                    const secondsAgo = now - data.last_updated;
+                    document.getElementById('lastUpdated').innerText = `Last updated: ${secondsAgo} seconds ago`;
+                } else {
+                    document.getElementById('lastUpdated').innerText = 'Waiting for data...';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching SPO2 data:', error);
+                document.getElementById('spo2Value').innerText = '--';
+                document.getElementById('spo2Avg').innerText = '--';
+                document.getElementById('lastUpdated').innerText = 'Error fetching data';
+                document.getElementById('spo2-status').innerHTML = '<span class="badge bg-danger">Error</span>';
+                document.querySelector('.spo2-container').classList.remove('pulse-animation');
+            });
+    }
+
+    // Update SPO2 data every 2 seconds
+    setInterval(updateSPO2, 2000);
+
+    // Initial update
+    updateSPO2();
+
+    // Add refresh button handler
+    document.getElementById('refresh-spo2').addEventListener('click', updateSPO2);
+</script>
+{% endblock %} 

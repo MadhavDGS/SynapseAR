@@ -1,0 +1,547 @@
+{% extends "base.html" %}
+
+{% block title %}Health Predictions - Synapse AR{% endblock %}
+
+{% block styles %}
+<style>
+    .prediction-card {
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        padding: 25px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+    
+    .prediction-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+    
+    .prediction-form {
+        margin-bottom: 20px;
+    }
+    
+    .prediction-result {
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 20px;
+    }
+    
+    .result-high {
+        background-color: rgba(220, 53, 69, 0.1);
+        border-left: 4px solid #dc3545;
+    }
+    
+    .result-medium {
+        background-color: rgba(255, 193, 7, 0.1);
+        border-left: 4px solid #ffc107;
+    }
+    
+    .result-low {
+        background-color: rgba(40, 167, 69, 0.1);
+        border-left: 4px solid #28a745;
+    }
+    
+    .result-icon {
+        font-size: 2rem;
+        margin-right: 15px;
+    }
+    
+    .nav-pills .nav-link {
+        border-radius: 10px;
+        padding: 10px 20px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .nav-pills .nav-link.active {
+        background-color: var(--primary-color);
+    }
+    
+    .tab-content {
+        padding-top: 20px;
+    }
+    
+    .sensor-value {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+    
+    .sensor-label {
+        font-size: 0.9rem;
+        color: var(--muted-text-light);
+    }
+    
+    .dark-theme .sensor-label {
+        color: var(--muted-text-dark);
+    }
+    
+    .prediction-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .prediction-header i {
+        font-size: 2rem;
+        margin-right: 15px;
+        color: var(--primary-color);
+    }
+</style>
+{% endblock %}
+
+{% block header %}
+<div class="page-header">
+    <div class="container text-center">
+        <h1>Health Predictions</h1>
+        <p class="lead">Advanced health analytics based on your sensor data</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-pills" id="predictionTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="hypertension-tab" data-bs-toggle="pill" data-bs-target="#hypertension" type="button" role="tab" aria-controls="hypertension" aria-selected="true">
+                        <i class="fas fa-heartbeat me-2"></i> Hypertension Risk
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="cardiac-tab" data-bs-toggle="pill" data-bs-target="#cardiac" type="button" role="tab" aria-controls="cardiac" aria-selected="false">
+                        <i class="fas fa-heart me-2"></i> Cardiac Arrest Risk
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="anxiety-tab" data-bs-toggle="pill" data-bs-target="#anxiety" type="button" role="tab" aria-controls="anxiety" aria-selected="false">
+                        <i class="fas fa-brain me-2"></i> Anxiety Assessment
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="predictionTabContent">
+                <!-- Hypertension Risk Tab -->
+                <div class="tab-pane fade show active" id="hypertension" role="tabpanel" aria-labelledby="hypertension-tab">
+                    <div class="prediction-card">
+                        <div class="prediction-header">
+                            <i class="fas fa-heartbeat"></i>
+                            <div>
+                                <h4>Hypertension Risk Analysis</h4>
+                                <p class="text-muted">Based on heart rate and blood pressure data</p>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Current Sensor Values</h5>
+                                        <div class="row mt-3">
+                                            <div class="col-6 text-center">
+                                                <div class="sensor-value" id="current-heart-rate">{{ sensor_data.heartRateAvg }}</div>
+                                                <div class="sensor-label">Heart Rate (BPM)</div>
+                                            </div>
+                                            <div class="col-6 text-center">
+                                                <div class="sensor-value" id="current-spo2">{{ sensor_data.spo2Avg }}</div>
+                                                <div class="sensor-label">SPO2 (%)</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form id="hypertensionForm" class="prediction-form">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="age" class="form-label">Age</label>
+                                    <input type="number" class="form-control" id="age" name="age" min="18" max="100" value="45" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="gender" class="form-label">Gender</label>
+                                    <select class="form-select" id="gender" name="gender" required>
+                                        <option value="0">Female</option>
+                                        <option value="1">Male</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="sysBP" class="form-label">Systolic BP (mmHg)</label>
+                                    <input type="number" class="form-control" id="sysBP" name="sysBP" min="80" max="220" value="120" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="diaBP" class="form-label">Diastolic BP (mmHg)</label>
+                                    <input type="number" class="form-control" id="diaBP" name="diaBP" min="40" max="120" value="80" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="heartRate" class="form-label">Heart Rate (BPM)</label>
+                                    <input type="number" class="form-control" id="heartRate" name="heartRate" min="40" max="200" value="{{ sensor_data.heartRateAvg }}" required>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <button type="submit" class="btn btn-primary">Analyze Hypertension Risk</button>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <div id="hypertensionResult" class="prediction-result d-none">
+                            <div class="d-flex align-items-center">
+                                <div class="result-icon">
+                                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1" id="hypertensionRiskLevel">Risk Level: Moderate</h5>
+                                    <p class="mb-0" id="hypertensionRiskDescription">Based on your inputs, you have a moderate risk of developing hypertension.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cardiac Arrest Risk Tab -->
+                <div class="tab-pane fade" id="cardiac" role="tabpanel" aria-labelledby="cardiac-tab">
+                    <div class="prediction-card">
+                        <div class="prediction-header">
+                            <i class="fas fa-heart"></i>
+                            <div>
+                                <h4>Cardiac Arrest Risk Assessment</h4>
+                                <p class="text-muted">Comprehensive analysis of heart attack risk factors</p>
+                            </div>
+                        </div>
+                        
+                        <form id="cardiacForm" class="prediction-form">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label for="cardiac_age" class="form-label">Age</label>
+                                    <input type="number" class="form-control" id="cardiac_age" name="cardiac_age" min="18" max="100" value="45" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="cardiac_gender" class="form-label">Gender</label>
+                                    <select class="form-select" id="cardiac_gender" name="cardiac_gender" required>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="cardiac_hr" class="form-label">Heart Rate (BPM)</label>
+                                    <input type="number" class="form-control" id="cardiac_hr" name="cardiac_hr" min="40" max="200" value="{{ sensor_data.heartRateAvg }}" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="cardiac_systolic" class="form-label">Systolic BP (mmHg)</label>
+                                    <input type="number" class="form-control" id="cardiac_systolic" name="cardiac_systolic" min="80" max="220" value="120" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="cardiac_diastolic" class="form-label">Diastolic BP (mmHg)</label>
+                                    <input type="number" class="form-control" id="cardiac_diastolic" name="cardiac_diastolic" min="40" max="120" value="80" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="bmi" class="form-label">BMI</label>
+                                    <input type="number" class="form-control" id="bmi" name="bmi" min="15" max="50" step="0.1" value="24.5" required>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <button type="submit" class="btn btn-primary">Analyze Cardiac Risk</button>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <div id="cardiacResult" class="prediction-result d-none">
+                            <div class="d-flex align-items-center">
+                                <div class="result-icon">
+                                    <i class="fas fa-heart text-danger"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1" id="cardiacRiskLevel">Risk Level: To be determined</h5>
+                                    <p class="mb-0" id="cardiacRiskDescription">Submit the form to see your cardiac arrest risk assessment.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Anxiety Assessment Tab -->
+                <div class="tab-pane fade" id="anxiety" role="tabpanel" aria-labelledby="anxiety-tab">
+                    <div class="prediction-card">
+                        <div class="prediction-header">
+                            <i class="fas fa-brain"></i>
+                            <div>
+                                <h4>Anxiety Assessment</h4>
+                                <p class="text-muted">Generalized Anxiety Disorder (GAD) screening</p>
+                            </div>
+                        </div>
+                        
+                        <form id="anxietyForm" class="prediction-form">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="anxiety_age" class="form-label">Age</label>
+                                    <input type="number" class="form-control" id="anxiety_age" name="anxiety_age" min="5" max="18" value="12" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="siblings" class="form-label">Number of Siblings</label>
+                                    <input type="number" class="form-control" id="siblings" name="siblings" min="0" max="10" value="1" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="bio_parents" class="form-label">Number of Bio. Parents</label>
+                                    <input type="number" class="form-control" id="bio_parents" name="bio_parents" min="0" max="2" value="2" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="poverty" class="form-label">Poverty Status</label>
+                                    <select class="form-select" id="poverty" name="poverty" required>
+                                        <option value="0">Not in poverty</option>
+                                        <option value="1">In poverty</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="impairments" class="form-label">Number of Impairments</label>
+                                    <input type="number" class="form-control" id="impairments" name="impairments" min="0" max="5" value="0" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="stressors_a" class="form-label">Number of Type A Stressors</label>
+                                    <input type="number" class="form-control" id="stressors_a" name="stressors_a" min="0" max="10" value="1" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="stressors_b" class="form-label">Number of Type B Stressors</label>
+                                    <input type="number" class="form-control" id="stressors_b" name="stressors_b" min="0" max="10" value="1" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="tantrums" class="form-label">Frequency of Temper Tantrums</label>
+                                    <select class="form-select" id="tantrums" name="tantrums" required>
+                                        <option value="0">Never</option>
+                                        <option value="1">Rarely</option>
+                                        <option value="2">Sometimes</option>
+                                        <option value="3">Often</option>
+                                        <option value="4">Very Often</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="irritable" class="form-label">Frequency of Irritable Mood</label>
+                                    <select class="form-select" id="irritable" name="irritable" required>
+                                        <option value="0">Never</option>
+                                        <option value="1">Rarely</option>
+                                        <option value="2">Sometimes</option>
+                                        <option value="3">Often</option>
+                                        <option value="4">Very Often</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="sleep" class="form-label">Number of Sleep Disturbances</label>
+                                    <input type="number" class="form-control" id="sleep" name="sleep" min="0" max="5" value="0" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="physical" class="form-label">Number of Physical Symptoms</label>
+                                    <input type="number" class="form-control" id="physical" name="physical" min="0" max="10" value="0" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="sensory" class="form-label">Number of Sensory Sensitivities</label>
+                                    <input type="number" class="form-control" id="sensory" name="sensory" min="0" max="5" value="0" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="substance" class="form-label">Family History - Substance Abuse</label>
+                                    <select class="form-select" id="substance" name="substance" required>
+                                        <option value="0">No</option>
+                                        <option value="1">Yes</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="psychiatric" class="form-label">Family History - Psychiatric Diagnosis</label>
+                                    <select class="form-select" id="psychiatric" name="psychiatric" required>
+                                        <option value="0">No</option>
+                                        <option value="1">Yes</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <button type="submit" class="btn btn-primary">Analyze Anxiety Risk</button>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <div id="anxietyResult" class="prediction-result d-none">
+                            <div class="d-flex align-items-center">
+                                <div class="result-icon">
+                                    <i class="fas fa-brain text-primary"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-1" id="anxietyRiskLevel">Risk Level: To be determined</h5>
+                                    <p class="mb-0" id="anxietyRiskDescription">Submit the form to see your anxiety assessment.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update form values with current sensor data
+        const updateSensorValues = () => {
+            fetch('/api/sensor_data')
+                .then(response => response.json())
+                .then(data => {
+                    // Update displayed values
+                    document.getElementById('current-heart-rate').textContent = 
+                        data.heart_rate.bpm ? Math.round(data.heart_rate.bpm) : '--';
+                    document.getElementById('current-spo2').textContent = 
+                        data.sensor_data.spo2 ? data.sensor_data.spo2 : '--';
+                    
+                    // Update form values if they exist
+                    if (document.getElementById('heartRate')) {
+                        document.getElementById('heartRate').value = 
+                            data.heart_rate.bpm ? Math.round(data.heart_rate.bpm) : 75;
+                    }
+                    if (document.getElementById('cardiac_hr')) {
+                        document.getElementById('cardiac_hr').value = 
+                            data.heart_rate.bpm ? Math.round(data.heart_rate.bpm) : 75;
+                    }
+                })
+                .catch(error => console.error('Error fetching sensor data:', error));
+        };
+        
+        // Initial update and then every 5 seconds
+        updateSensorValues();
+        setInterval(updateSensorValues, 5000);
+        
+        // Hypertension risk form submission
+        document.getElementById('hypertensionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                age: parseInt(document.getElementById('age').value),
+                male: parseInt(document.getElementById('gender').value),
+                sysBP: parseInt(document.getElementById('sysBP').value),
+                diaBP: parseInt(document.getElementById('diaBP').value),
+                heartRate: parseInt(document.getElementById('heartRate').value)
+            };
+            
+            fetch('/api/predict/hypertension', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('hypertensionResult');
+                const riskLevel = document.getElementById('hypertensionRiskLevel');
+                const riskDesc = document.getElementById('hypertensionRiskDescription');
+                
+                resultDiv.classList.remove('d-none', 'result-low', 'result-medium', 'result-high');
+                
+                if (data.risk === 1) {
+                    resultDiv.classList.add('result-high');
+                    riskLevel.textContent = 'Risk Level: High';
+                    riskDesc.textContent = 'Based on your inputs, you have a high risk of hypertension. Consider consulting a healthcare professional.';
+                } else {
+                    resultDiv.classList.add('result-low');
+                    riskLevel.textContent = 'Risk Level: Low';
+                    riskDesc.textContent = 'Based on your inputs, you have a low risk of hypertension.';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request.');
+            });
+        });
+        
+        // Cardiac risk form submission
+        document.getElementById('cardiacForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                Age: parseInt(document.getElementById('cardiac_age').value),
+                Gender: document.getElementById('cardiac_gender').value,
+                Heart_Rate: parseInt(document.getElementById('cardiac_hr').value),
+                Systolic_BP: parseInt(document.getElementById('cardiac_systolic').value),
+                Diastolic_BP: parseInt(document.getElementById('cardiac_diastolic').value),
+                BMI: parseFloat(document.getElementById('bmi').value)
+            };
+            
+            fetch('/api/predict/cardiac', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('cardiacResult');
+                const riskLevel = document.getElementById('cardiacRiskLevel');
+                const riskDesc = document.getElementById('cardiacRiskDescription');
+                
+                resultDiv.classList.remove('d-none', 'result-low', 'result-medium', 'result-high');
+                
+                if (data.risk === 1) {
+                    resultDiv.classList.add('result-high');
+                    riskLevel.textContent = 'Risk Level: High';
+                    riskDesc.textContent = 'Based on your inputs, you have a high risk of cardiac arrest. Please consult a healthcare professional.';
+                } else {
+                    resultDiv.classList.add('result-low');
+                    riskLevel.textContent = 'Risk Level: Low';
+                    riskDesc.textContent = 'Based on your inputs, you have a low risk of cardiac arrest.';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request.');
+            });
+        });
+        
+        // Anxiety assessment form submission
+        document.getElementById('anxietyForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                Age: parseInt(document.getElementById('anxiety_age').value),
+                Siblings: parseInt(document.getElementById('siblings').value),
+                BioParents: parseInt(document.getElementById('bio_parents').value),
+                Poverty: parseInt(document.getElementById('poverty').value),
+                Impairments: parseInt(document.getElementById('impairments').value),
+                StressorsA: parseInt(document.getElementById('stressors_a').value),
+                StressorsB: parseInt(document.getElementById('stressors_b').value),
+                Tantrums: parseInt(document.getElementById('tantrums').value),
+                Irritable: parseInt(document.getElementById('irritable').value),
+                Sleep: parseInt(document.getElementById('sleep').value),
+                Physical: parseInt(document.getElementById('physical').value),
+                Sensory: parseInt(document.getElementById('sensory').value),
+                Substance: parseInt(document.getElementById('substance').value),
+                Psychiatric: parseInt(document.getElementById('psychiatric').value)
+            };
+            
+            fetch('/api/predict/anxiety', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('anxietyResult');
+                const riskLevel = document.getElementById('anxietyRiskLevel');
+                const riskDesc = document.getElementById('anxietyRiskDescription');
+                
+                resultDiv.classList.remove('d-none', 'result-low', 'result-medium', 'result-high');
+                
+                if (data.risk === 1) {
+                    resultDiv.classList.add('result-medium');
+                    riskLevel.textContent = 'Assessment: Potential GAD';
+                    riskDesc.textContent = 'Based on your inputs, there are indicators of potential Generalized Anxiety Disorder. Consider consulting a mental health professional for a proper evaluation.';
+                } else {
+                    resultDiv.classList.add('result-low');
+                    riskLevel.textContent = 'Assessment: Low Risk';
+                    riskDesc.textContent = 'Based on your inputs, there are no significant indicators of Generalized Anxiety Disorder.';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request.');
+            });
+        });
+    });
+</script>
+{% endblock %} 
